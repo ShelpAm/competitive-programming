@@ -10,7 +10,7 @@
 
 namespace shelpam::math {
 
-template <typename Value_type, std::size_t Dimension> struct Vector {
+template <typename Value, std::size_t Dimension> struct Vector {
     friend auto operator+(Vector lhs, Vector const &rhs)
     {
         return lhs += rhs;
@@ -21,9 +21,9 @@ template <typename Value_type, std::size_t Dimension> struct Vector {
         return lhs -= rhs;
     }
 
-    friend auto dot(Vector const &lhs, Vector const &rhs) -> Value_type
+    friend auto dot(Vector const &lhs, Vector const &rhs) -> Value
     {
-        Value_type result{};
+        Value result{};
         for (std::size_t i{}; i != Dimension; ++i) {
             result += lhs.coordinate[i] * rhs.coordinate[i];
         }
@@ -31,20 +31,20 @@ template <typename Value_type, std::size_t Dimension> struct Vector {
     }
 
     // 向量 * 标量
-    friend auto operator*(Vector lhs, Value_type const &scalar)
+    friend auto operator*(Vector lhs, Value const &scalar)
     {
         return lhs *= scalar;
     }
 
     // 标量 * 向量
-    friend auto operator*(Value_type const &scalar, Vector const &rhs)
+    friend auto operator*(Value const &scalar, Vector const &rhs)
     {
         Vector result = rhs;
         return result *= scalar;
     }
 
     // 向量 / 标量
-    friend auto operator/(Vector lhs, Value_type const &scalar)
+    friend auto operator/(Vector lhs, Value const &scalar)
     {
         return lhs /= scalar;
     }
@@ -74,7 +74,7 @@ template <typename Value_type, std::size_t Dimension> struct Vector {
     }
 
     // 数乘赋值运算符
-    Vector &operator*=(Value_type const &scalar)
+    Vector &operator*=(Value const &scalar)
     {
         for (std::size_t i{}; i != Dimension; ++i) {
             coordinate.at(i) *= scalar;
@@ -83,9 +83,9 @@ template <typename Value_type, std::size_t Dimension> struct Vector {
     }
 
     // 数除赋值运算符
-    Vector &operator/=(Value_type const &scalar)
+    Vector &operator/=(Value const &scalar)
     {
-        if (scalar == Value_type{}) {
+        if (scalar == Value{}) {
             throw std::invalid_argument("Division by zero");
         }
         for (std::size_t i{}; i != Dimension; ++i) {
@@ -99,31 +99,31 @@ template <typename Value_type, std::size_t Dimension> struct Vector {
         return coordinate == rhs.coordinate;
     }
 
-    [[nodiscard]] Value_type x() const
+    [[nodiscard]] Value x() const
     {
         return coordinate.at(0);
     }
 
-    [[nodiscard]] Value_type y() const
+    [[nodiscard]] Value y() const
     {
         return coordinate.at(1);
     }
 
-    [[nodiscard]] Value_type z() const
+    [[nodiscard]] Value z() const
     {
         return coordinate.at(2);
     }
 
     [[nodiscard]] auto length() const
     {
-        Value_type result{};
+        Value result{};
         for (auto e : coordinate) {
             result += e * e;
         }
         return std::sqrt(result);
     }
 
-    std::array<Value_type, Dimension> coordinate{};
+    std::array<Value, Dimension> coordinate{};
 };
 
 template <typename Value_type> using Vector2d = Vector<Value_type, 2>;

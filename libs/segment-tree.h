@@ -2,11 +2,14 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <numeric>
 #include <vector>
 
 namespace shelpam {
 
+// NOLINTBEGIN(readability-math-missing-parentheses)
 class Segment_tree {
+    // 不包含u节点，只代表u的儿子的懒标记
     struct Lazy_tag {
         auto operator+=(Lazy_tag const &rhs) -> Lazy_tag &
         {
@@ -18,29 +21,38 @@ class Segment_tree {
     };
 
     struct Node {
-        int left{};
-        int right{};
-    };
+        struct Info {
+            std::int_fast64_t sum{};
+            std::int_fast64_t max{
+                std::numeric_limits<std::int_fast64_t>::min()};
+            std::int_fast64_t min{
+                std::numeric_limits<std::int_fast64_t>::max()};
+        };
 
-    struct Info {
-        auto operator+=(Info const &rhs) -> Info &
+        Node &operator+=(Node const &rhs)
         {
-            sum += rhs.sum;
+            info.sum += rhs.info.sum;
+            info.max = std::max(info.max, rhs.info.max);
+            info.min = std::min(info.min, rhs.info.min);
             return *this;
         }
 
-        void apply(Lazy_tag const &lazy_tag, int segment_length)
+        Node &operator+=(Lazy_tag const &tag)
         {
-            sum += lazy_tag.addition * segment_length;
+            info.sum += tag.addition * (right - left + 1);
+            info.max += tag.addition;
+            info.min += tag.addition;
+            return *this;
         }
 
-        std::int_fast64_t sum{};
+        int left{-1};
+        int right{-1};
+        Info info;
     };
 
   public:
     explicit Segment_tree(int l, int r)
-        : _nodes(4 * (r - l + 1) + 1), _info(4 * (r - l + 1) + 1),
-          _lazy_tags(4 * (r - l + 1) + 1)
+        : node_(4 * (r - l + 1) + 1), lazy_tags_(4 * (r - l + 1) + 1)
     {
         build_tree(l, r, 1);
     }
@@ -50,7 +62,7 @@ class Segment_tree {
         apply_impl(l, r, 1, tag);
     }
 
-    auto query(int l, int r) -> Info
+    Node query(int l, int r)
     {
         return query_impl(l, r, 1);
     }
@@ -59,64 +71,65 @@ class Segment_tree {
     // Sets up segments that nodes manage.
     void build_tree(int l, int r, int u)
     {
-        _nodes[u].left = l;
-        _nodes[u].right = r;
+        node_[u].left = l;
+        node_[u].right = r;
 
         if (l != r) {
-            auto const m{(l + r) / 2};
+            auto const m = (l + r) / 2;
             build_tree(l, m, u * 2);
-            build_tree(m + 1, r, u * 2 + 1);
+            build_tree(m + 1, r, (u * 2) + 1);
         }
     }
 
     void do_lazy_propagation(std::size_t u)
     {
-        if (!is_leaf(u)) {
-            _lazy_tags[u * 2] += _lazy_tags[u];
-            _lazy_tags[u * 2 + 1] += _lazy_tags[u];
-            _info[u * 2].apply(_lazy_tags[u],
-                               _nodes[u * 2].right - _nodes[u * 2].left + 1);
-            _info[u * 2 + 1].apply(_lazy_tags[u], _nodes[u * 2 + 1].right -
-                                                      _nodes[u * 2 + 1].left +
-                                                      1);
+        if (is_leaf(u)) {
+            return;
         }
 
-        _lazy_tags[u] = {};
+        lazy_tags_[u * 2] += lazy_tags_[u];
+        lazy_tags_[u * 2 + 1] += lazy_tags_[u];
+        node_[u * 2] += lazy_tags_[u];
+        node_[u * 2 + 1] += lazy_tags_[u];
+        lazy_tags_[u] = {};
     }
 
     void apply_impl(int l, int r, std::size_t u, Lazy_tag const &tag)
     {
-        _info[u].apply(tag, r - l + 1);
-
-        if (l <= _nodes[u].left && _nodes[u].right <= r) {
-            _lazy_tags[u] += tag;
+        if (l <= node_[u].left && node_[u].right <= r) {
+            node_[u] += tag;
+            lazy_tags_[u] += tag;
             return;
         }
 
-        if (_nodes[u * 2].right >= l) {
-            apply_impl(l, std::min(r, _nodes[u * 2].right), u * 2, tag);
+        do_lazy_propagation(u);
+        if (node_[u * 2].right >= l) {
+            apply_impl(l, r, u * 2, tag);
         }
-        if (_nodes[u * 2 + 1].left <= r) {
-            apply_impl(std::max(_nodes[u * 2 + 1].left, l), r, u * 2 + 1, tag);
+        if (node_[u * 2 + 1].left <= r) {
+            apply_impl(l, r, u * 2 + 1, tag);
         }
+        node_[u].info = {};
+        node_[u] += node_[u * 2];
+        node_[u] += node_[u * 2 + 1];
     }
 
     // We assume that [l, r] contains [_nodes[u].left_end, _nodes[u].right_end].
-    [[nodiscard]] auto query_impl(int l, int r, std::size_t u) -> Info
+    Node query_impl(int l, int r, std::size_t u)
     {
         // If [l, r] nests node u, the segment node doesn't have to be divided
         // anymore. So we direct return the info of this node.
-        if (l <= _nodes[u].left && _nodes[u].right <= r) {
-            return _info[u];
+        if (l <= node_[u].left && node_[u].right <= r) {
+            return node_[u];
         }
 
         do_lazy_propagation(u);
 
-        Info res;
-        if (_nodes[u * 2].right >= l) {
+        Node res;
+        if (node_[u * 2].right >= l) {
             res += query_impl(l, r, u * 2);
         }
-        if (_nodes[u * 2 + 1].left <= r) {
+        if (node_[u * 2 + 1].left <= r) {
             res += query_impl(l, r, u * 2 + 1);
         }
         return res;
@@ -124,12 +137,12 @@ class Segment_tree {
 
     [[nodiscard]] auto is_leaf(std::size_t u) const -> bool
     {
-        return _nodes[u].left == _nodes[u].right;
+        return node_[u].left == node_[u].right;
     }
 
-    std::vector<Node> _nodes;
-    std::vector<Info> _info;
-    std::vector<Lazy_tag> _lazy_tags;
+    std::vector<Node> node_;
+    std::vector<Lazy_tag> lazy_tags_;
 };
+// NOLINTEND(readability-math-missing-parentheses)
 
 } // namespace shelpam
