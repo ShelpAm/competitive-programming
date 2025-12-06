@@ -1,0 +1,306 @@
+#pragma once
+
+#ifndef __cpp_concepts
+#error This lib requires at least cpp20 to work.
+#endif
+
+// Problem: $(PROBLEM)
+// Contest: $(CONTEST)
+// Judge: $(JUDGE)
+// URL: $(URL)
+// Start: $(DATE)
+// Author: ShelpAm
+
+// #include <bits/stdc++.h>
+#include <algorithm>
+#include <bit>
+#include <bitset>
+#include <cassert>
+#include <chrono>
+#include <climits>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <deque>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <list>
+#include <map>
+#include <numbers>
+#include <numeric>
+#include <queue>
+#include <random>
+#include <ranges>
+#include <set>
+#include <stack>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+namespace {
+[[maybe_unused]] constexpr std::uint_least64_t mod998244353{998'244'353ULL};
+[[maybe_unused]] constexpr std::uint_least64_t mod1e9p7{1'000'000'007ULL};
+[[maybe_unused]] constexpr double eps{1e-10};
+template <typename T> constexpr T inf{std::numeric_limits<T>::max() / 4};
+template <typename T> constexpr T max{std::numeric_limits<T>::max()};
+
+// Concepts.
+namespace shelpam::concepts {
+template <typename> struct is_pair_t : std::false_type {};
+template <typename T, typename U>
+struct is_pair_t<std::pair<T, U>> : std::true_type {};
+template <typename T>
+concept pair = is_pair_t<T>::value;
+template <typename> struct is_tuple_t : std::false_type {};
+template <typename... Ts>
+struct is_tuple_t<std::tuple<Ts...>> : std::true_type {};
+template <typename... Ts>
+concept tuple = is_tuple_t<Ts...>::value;
+template <typename T, typename U = std::remove_cvref_t<T>>
+concept non_string_range =
+    !std::same_as<U, std::string> && (std::ranges::range<U> || pair<U>);
+} // namespace shelpam::concepts
+
+std::istream &operator>>(std::istream &istream,
+                         shelpam::concepts::non_string_range auto &&t)
+{
+    using T = std::remove_cvref_t<decltype(t)>;
+    static_assert(!shelpam::concepts::tuple<T>,
+                  "tuple: not implemented yet.\n");
+    if constexpr (std::ranges::range<T>) {
+        for (auto &ele : t) {
+            istream >> ele;
+        }
+    }
+    else if constexpr (shelpam::concepts::pair<T>) {
+        istream >> t.first >> t.second;
+    }
+    else {
+        istream >> t;
+    }
+    return istream;
+}
+#ifndef ONLINE_JUDGE
+#include "/home/shelpam/Documents/projects/competitive-programming/libs/debug.h"
+#else
+#define debug(...)
+#endif
+void YesNo(bool yes)
+{
+    std::cout << (yes ? "Yes\n" : "No\n");
+}
+bool chmax(auto &value, auto const &other) noexcept
+{
+    if (value < other) {
+        value = other;
+        return true;
+    }
+    return false;
+}
+bool chmin(auto &value, auto const &other) noexcept
+{
+    if (value > other) {
+        value = other;
+        return true;
+    }
+    return false;
+}
+constexpr auto sum_of(std::ranges::range auto const &coll) noexcept
+{
+    return std::accumulate(
+        coll.begin(), coll.end(),
+        typename std::remove_cvref_t<decltype(coll)>::value_type{});
+}
+template <typename T> constexpr T pow(T base, auto exp, std::integral auto p)
+{
+    static_assert(sizeof(base) > sizeof(int), "Use of `int`s is bug-prone.");
+    if (exp < 0) {
+        base = pow(base, p - 2, p);
+        exp = -exp;
+    }
+    decltype(base) res{1};
+    while (exp != 0) {
+        if ((exp & 1) == 1) {
+            res = res * base % p;
+        }
+        base = base * base % p;
+        exp >>= 1;
+    }
+    return res;
+}
+std::int_least64_t binary_search(std::invocable<std::int_least64_t> auto check,
+                                 std::int_least64_t ok, std::int_least64_t ng,
+                                 bool check_ok = true)
+{
+    if (check_ok && !check(ok)) {
+        throw std::invalid_argument{"check isn't true on 'ok'."};
+    }
+    while (std::abs(ok - ng) > 1) {
+        auto const x = (ok + ng) / 2;
+        (check(x) ? ok : ng) = x;
+    }
+    return ok;
+}
+template <std::unsigned_integral T> constexpr T lsb(T i) noexcept
+{
+    return i & -i;
+}
+// i mustn't be 0
+constexpr int msb(std::unsigned_integral auto i)
+{
+    if (i == 0) {
+        throw std::invalid_argument{"i must be positive."};
+    }
+    return (sizeof(i) * CHAR_BIT) - 1 - std::countl_zero(i);
+}
+// [[maybe_unused]] auto gen_rand() noexcept
+// {
+//     static std::mt19937_64 rng(
+//         std::chrono::steady_clock::now().time_since_epoch().count());
+//     return rng();
+// }
+} // namespace
+void solve_case();
+int main()
+{
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    constexpr auto my_precision{10};
+    std::cout << std::fixed << std::setprecision(my_precision);
+    int t{1};
+    std::cin >> t;
+    for (int i{}; i != t; ++i) {
+#ifndef ONLINE_JUDGE
+        std::cerr << "Test case " << i << '\n';
+#endif
+        solve_case();
+    }
+    return 0;
+}
+using i64 = std::int_least64_t;
+using i128 = __int128_t;
+using u64 = std::uint_least64_t;
+using u128 = __uint128_t;
+void solve_case()
+{
+    using namespace ::shelpam;
+    int n;
+    std::cin >> n;
+    std::string s;
+    std::cin >> s;
+    s.insert(s.begin(), '#');
+    s.insert(s.end(), '#');
+
+    std::unordered_map<char, int> mp{{'P', 0}, {'W', 1}, {'C', 2}};
+    std::unordered_map<int, char> rmp{{0, 'P'}, {1, 'W'}, {2, 'C'}};
+    for (int i{1}; i != n + 1; ++i) {
+        s[i] = mp[s[i]];
+    }
+
+    // std::string const chars{"PWC"};
+    std::vector<int> chars{0, 1, 2};
+    std::vector<std::vector<int>> o(n + 1, std::vector<int>(3));
+    int minl{inf<int>};
+    int maxr{};
+    for (int i{1}; i != n + 1; ++i) {
+        if (s[i] == s[i + 1]) {
+            chmin(minl, i + 1);
+            chmax(maxr, i);
+        }
+        for (auto ch : chars) {
+            o[i][ch] = o[i - 1][ch] + (s[i] == ch ? 1 : 0);
+        }
+    }
+
+    if (minl == inf<int>) {
+        std::cout << "Beautiful\n";
+        return;
+    }
+
+    debug("o", o);
+
+    int ans_l{inf<int>};
+    int ans_i{-1};
+    for (int i{1}; i != n + 1; ++i) {
+        auto chk = [&](int len) {
+            debug("i", i);
+            debug("len", len);
+            auto l = i;
+            auto r = i + len - 1;
+            if (minl < l || r < maxr) { // Not included
+                return false;
+            }
+            for (auto ch : chars) {
+                auto occ = o[r][ch] - o[l - 1][ch];
+                debug("ch", ch);
+                debug("occ", occ);
+                auto c = (s[l - 1] == ch) + (s[r + 1] == ch);
+                if (c == 2 && (len - 1) / 2 < occ) {
+                    return false;
+                }
+                if (c == 1 && (len) / 2 < occ) {
+                    return false;
+                }
+                if (c == 0 && (len + 1) / 2 < occ) {
+                    return false;
+                }
+            }
+            return true;
+        };
+        auto len = binary_search(chk, n - i + 2, 0, false);
+        if (len == n - i + 2) { // Not ok
+            continue;
+        }
+        if (chmin(ans_l, len)) {
+            ans_i = i;
+            debug("ans_l", ans_l);
+            debug("ans_i", ans_i);
+        }
+    }
+
+    if (ans_i == -1) {
+        std::cout << "Impossible\n";
+        return;
+    }
+
+    std::cout << "Possible\n";
+    std::cout << ans_i << ' ' << ans_i + ans_l - 1 << '\n';
+
+    std::unordered_map<char, int> cnt;
+    for (auto ch : chars) {
+        cnt[ch] = o[ans_i + ans_l - 1][ch] - o[ans_i - 1][ch];
+    }
+    std::vector<std::pair<int, char>> t;
+    for (auto [k, v] : cnt) {
+        t.push_back({v, k});
+    }
+    for (int i{ans_i}; i != ans_i + ans_l; ++i) {
+        std::ranges::sort(t | std::views::reverse);
+        auto use = t[0].second == s[i - 1] ? 1 : 0;
+        s[i] = t[use].second;
+        --t[use].first;
+    }
+
+    auto type =
+        std::ranges::count_if(cnt, [](auto p) { return p.second != 0; });
+    if (s[ans_i + ans_l - 1] == s[ans_i + ans_l]) {
+        debug("type", type);
+        if (type == 2) {
+            std::ranges::reverse(s.begin() + ans_i, s.begin() + ans_i + ans_l);
+        }
+        else {
+            assert(type == 3);
+            std::swap(s[ans_i + ans_l - 1], s[ans_i + ans_l - 2]);
+        }
+    }
+
+    for (int i{1}; i != n + 1; ++i) {
+        s[i] = rmp[s[i]];
+        assert(s[i] != s[i - 1]);
+    }
+    std::cout << s.substr(1, n) << '\n';
+}

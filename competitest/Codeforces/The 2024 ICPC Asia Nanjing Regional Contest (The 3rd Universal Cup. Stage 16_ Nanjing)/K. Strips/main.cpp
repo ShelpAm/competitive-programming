@@ -1,107 +1,232 @@
-#include <bits/stdc++.h>
-using namespace std;
-#define Endl "\n"
-#define INF 0x3f3f3f3f
-#define PI 3.14159265358979323846 // 20f
-const int MOD = 998244353;
-// const int MOD = 1e9 + 7;
-typedef long long ll;
-typedef unsigned long long ull;
-int dx[4] = {0, 1, 0, -1};
-int dy[4] = {1, 0, -1, 0};
-#define int ll
+#pragma once
 
-void work()
+#ifndef __cpp_concepts
+#error This lib requires at least cpp20 to work.
+#endif
+
+// Problem: K. Strips
+// Contest: The 2024 ICPC Asia Nanjing Regional Contest (The 3rd Universal Cup.
+// Stage 16: Nanjing) Judge: Codeforces URL:
+// https://codeforces.com/gym/105484/problem/K Start: Sun 12 Oct 2025 04:38:00
+// PM CST Author: ShelpAm
+
+// #include <bits/stdc++.h>
+#include <algorithm>
+#include <bit>
+#include <bitset>
+#include <cassert>
+#include <chrono>
+#include <climits>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <deque>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <list>
+#include <map>
+#include <numbers>
+#include <numeric>
+#include <queue>
+#include <random>
+#include <ranges>
+#include <set>
+#include <stack>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+namespace {
+[[maybe_unused]] constexpr std::uint_least64_t mod998244353{998'244'353ULL};
+[[maybe_unused]] constexpr std::uint_least64_t mod1e9p7{1'000'000'007ULL};
+[[maybe_unused]] constexpr double eps{1e-10};
+template <typename T> constexpr T inf{std::numeric_limits<T>::max() / 4};
+template <typename T> constexpr T max{std::numeric_limits<T>::max()};
+
+// Concepts.
+namespace shelpam::concepts {
+template <typename> struct is_pair_t : std::false_type {};
+template <typename T, typename U>
+struct is_pair_t<std::pair<T, U>> : std::true_type {};
+template <typename T>
+concept pair = is_pair_t<T>::value;
+template <typename> struct is_tuple_t : std::false_type {};
+template <typename... Ts>
+struct is_tuple_t<std::tuple<Ts...>> : std::true_type {};
+template <typename... Ts>
+concept tuple = is_tuple_t<Ts...>::value;
+template <typename T, typename U = std::remove_cvref_t<T>>
+concept non_string_range =
+    !std::same_as<U, std::string> && (std::ranges::range<U> || pair<U>);
+} // namespace shelpam::concepts
+
+std::istream &operator>>(std::istream &istream,
+                         shelpam::concepts::non_string_range auto &&t)
 {
-    int n, m, k, w;
-    // cout << "S";
-    cin >> n >> m >> k >> w;
-    vector<int> black(m + 20);
-    vector<int> red(n + 10);
-    for (int i = 1; i <= n; i++)
-        cin >> red[i];
-    for (int i = 1; i <= m; i++)
-        cin >> black[i];
-    sort(red.begin() + 1, red.begin() + n + 1);
-    sort(black.begin() + 1, black.begin() + m + 1);
-    // pre
-    vector<int> l, r;
-    vector<vector<int>> duan;
-    int j = 1;
-    black[0] = 0, black[m + 1] = w + 1;
-    for (int i = 0; i <= m; i++) {
-        // cout << i << " " << black[i] << "\n";
-        if (red[j] > black[i] && red[j] < black[i + 1]) {
-            vector<int> ces;
-            l.push_back(black[i] + 1);
-            r.push_back(black[i + 1] - 1);
-            while (j <= n && red[j] > black[i] && red[j] < black[i + 1]) {
-                ces.push_back(red[j]);
-                j++;
-            }
-            duan.push_back(ces);
-        }
-        else {
-            continue;
+    using T = std::remove_cvref_t<decltype(t)>;
+    static_assert(!shelpam::concepts::tuple<T>,
+                  "tuple: not implemented yet.\n");
+    if constexpr (std::ranges::range<T>) {
+        for (auto &ele : t) {
+            istream >> ele;
         }
     }
-
-    int siz = l.size();
-    cout << "qujian(num): " << siz << '\n';
-    vector<int> ans;
-    for (int j = 0; j < siz; j++) {
-        int zuo = l[j], you = r[j];
-        auto vec = duan[j];
-        int num = 0;
-        int nl, nr;
-        vector<int> fangl, fangr;
-        for (int i = 0; i < vec.size(); i++) {
-            if (vec[i] > nr) {
-                num++;
-                fangl.push_back(nl);
-                fangr.push_back(nr);
-                nl = vec[i];
-                nr = vec[i] + k - 1;
-            }
-            else {
-                continue;
-            }
-        }
-        if (nr > you) {
-            fangr[fangr.size() - 1] = you;
-            fangl[fangl.size() - 1] = you - k + 1;
-            // cout << fangl.size() << " and " << fangr.size() << "\n";
-            // for (int i = fangl.size() - 2; i >= 0; i--) {
-            //   if (fangl[i + 1] <= fangr[i]) {
-            //     fangr[i] = fangl[i + 1] - 1;
-            //     fangl[i] = fangr[i] - k + 1;
-            //   } else {
-            //     break;
-            //   }
-            // }
-            if (fangl[0] < zuo) {
-                cout << -1 << '\n';
-                return;
-            }
-        }
-        for (int i = 0; i < fangl.size(); i++) {
-            ans.push_back(fangl[i]);
-        }
+    else if constexpr (shelpam::concepts::pair<T>) {
+        istream >> t.first >> t.second;
     }
-    cout << ans.size() << '\n';
-    for (int i = 0; i < ans.size(); i++)
-        cout << ans[i] << " ";
-    cout << '\n';
+    else {
+        istream >> t;
+    }
+    return istream;
 }
-#undef int
+#ifndef ONLINE_JUDGE
+#include "/home/shelpam/Documents/projects/competitive-programming/libs/debug.h"
+#else
+#define debug(...)
+#endif
+void YesNo(bool yes)
+{
+    std::cout << (yes ? "Yes\n" : "No\n");
+}
+bool chmax(auto &value, auto const &other) noexcept
+{
+    if (value < other) {
+        value = other;
+        return true;
+    }
+    return false;
+}
+bool chmin(auto &value, auto const &other) noexcept
+{
+    if (value > other) {
+        value = other;
+        return true;
+    }
+    return false;
+}
+constexpr auto sum_of(std::ranges::range auto const &coll) noexcept
+{
+    return std::accumulate(
+        coll.begin(), coll.end(),
+        typename std::remove_cvref_t<decltype(coll)>::value_type{});
+}
+template <typename T> constexpr T pow(T base, auto exp, std::integral auto p)
+{
+    static_assert(sizeof(base) > sizeof(int), "Use of `int`s is bug-prone.");
+    if (exp < 0) {
+        base = pow(base, p - 2, p);
+        exp = -exp;
+    }
+    decltype(base) res{1};
+    while (exp != 0) {
+        if ((exp & 1) == 1) {
+            res = res * base % p;
+        }
+        base = base * base % p;
+        exp >>= 1;
+    }
+    return res;
+}
+std::int_least64_t binary_search(std::invocable<std::int_least64_t> auto check,
+                                 std::int_least64_t ok, std::int_least64_t ng,
+                                 bool check_ok = true)
+{
+    if (check_ok && !check(ok)) {
+        throw std::invalid_argument{"check isn't true on 'ok'."};
+    }
+    while (std::abs(ok - ng) > 1) {
+        auto const x = (ok + ng) / 2;
+        (check(x) ? ok : ng) = x;
+    }
+    return ok;
+}
+template <std::unsigned_integral T> constexpr T lsb(T i) noexcept
+{
+    return i & -i;
+}
+// i mustn't be 0
+constexpr int msb(std::unsigned_integral auto i)
+{
+    if (i == 0) {
+        throw std::invalid_argument{"i must be positive."};
+    }
+    return (sizeof(i) * CHAR_BIT) - 1 - std::countl_zero(i);
+}
+// [[maybe_unused]] auto gen_rand() noexcept
+// {
+//     static std::mt19937_64 rng(
+//         std::chrono::steady_clock::now().time_since_epoch().count());
+//     return rng();
+// }
+} // namespace
+void solve_case();
 int main()
 {
-    ios::sync_with_stdio(false);
-    cin.tie(0);
-    // cout << fixed << setprecision(2);
-    int T = 1;
-    cin >> T;
-    while (T--) {
-        work();
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    constexpr auto my_precision{10};
+    std::cout << std::fixed << std::setprecision(my_precision);
+    int t{1};
+    std::cin >> t;
+    for (int i{}; i != t; ++i) {
+#ifndef ONLINE_JUDGE
+        std::cerr << "Test case " << i << '\n';
+#endif
+        solve_case();
     }
+    return 0;
+}
+using i64 = std::int_least64_t;
+using i128 = __int128_t;
+using u64 = std::uint_least64_t;
+using u128 = __uint128_t;
+void solve_case()
+{
+    using namespace ::shelpam;
+    int n, m, k, w;
+    std::cin >> n >> m >> k >> w;
+    std::vector<int> a(n);
+    std::cin >> a;
+    std::vector<int> b(m);
+    std::cin >> b;
+
+    b.push_back(0);
+    b.push_back(w + 1);
+    std::ranges::sort(a);
+    std::ranges::sort(b);
+
+    std::vector<int> ans;
+    for (auto e : a) {
+        if (!ans.empty() && ans.back() + k - 1 >= e) {
+            continue;
+        }
+        auto r = std::min(e + k, *std::ranges::lower_bound(b, e)) - 1;
+        auto l = r - k + 1;
+        if (*std::ranges::lower_bound(b, l) <= r) {
+            std::cout << -1 << '\n';
+            return;
+        }
+        ans.push_back(l);
+        if (ans.size() >= 2) {
+            for (auto it = std::next(ans.rbegin()); it != ans.rend(); ++it) {
+                if (!chmin(*it, *std::prev(it) - k)) {
+                    break;
+                }
+                if (*std::ranges::lower_bound(b, *it) <= r) {
+                    std::cout << -1 << '\n';
+                    return;
+                }
+            }
+        }
+    }
+
+    std::cout << ans.size() << '\n';
+    for (auto e : ans) {
+        std::cout << e << ' ';
+    }
+    std::cout << '\n';
 }

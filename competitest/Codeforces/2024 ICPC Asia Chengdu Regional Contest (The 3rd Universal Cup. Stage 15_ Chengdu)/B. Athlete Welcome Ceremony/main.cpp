@@ -1,12 +1,14 @@
 #pragma once
 
-/*Problem: B. Athlete Welcome Ceremony*/
-/*Contest: 2024 ICPC Asia Chengdu Regional Contest (The 3rd Universal Cup. Stage
- * 15: Chengdu)*/
-/*Judge: Codeforces*/
-/*URL: https://codeforces.com/gym/105486/problem/B*/
-/*Start: Wed 13 Nov 2024 08:50:42 PM CST*/
-/*Author: ShelpAm*/
+#ifndef __cpp_concepts
+#error This lib requires at least cpp20 to work.
+#endif
+
+// Problem: B. Athlete Welcome Ceremony
+// Contest: 2024 ICPC Asia Chengdu Regional Contest (The 3rd Universal Cup.
+// Stage 15: Chengdu) Judge: Codeforces URL:
+// https://codeforces.com/gym/105486/problem/B Start: Thu 23 Oct 2025 02:51:00
+// PM CST Author: ShelpAm
 
 // #include <bits/stdc++.h>
 #include <algorithm>
@@ -22,6 +24,7 @@
 #include <functional>
 #include <iomanip>
 #include <iostream>
+#include <list>
 #include <map>
 #include <numbers>
 #include <numeric>
@@ -37,271 +40,10 @@
 #include <unordered_set>
 #include <vector>
 
-using i64 = std::int_fast64_t;
-using u64 = std::uint_fast64_t;
-/**   取模类（MLong & MInt 新版）
- *    2023-08-14:
- *https://ac.nowcoder.com/acm/contest/view-submission?submissionId=63433564
- *
- *    根据输入内容动态修改 MOD 的方法：Z::setMod(p) 。
- **/
-template <class T> constexpr T power(T a, i64 b)
-{
-    T res = 1;
-    for (; b; b /= 2, a *= a) {
-        if (b % 2) {
-            res *= a;
-        }
-    }
-    return res;
-}
-
-constexpr i64 mul(i64 a, i64 b, i64 p)
-{
-    i64 res = a * b - i64(1.L * a * b / p) * p;
-    res %= p;
-    if (res < 0) {
-        res += p;
-    }
-    return res;
-}
-template <i64 P> struct MLong {
-    i64 x;
-    constexpr MLong() : x{} {}
-    constexpr MLong(i64 x) : x{norm(x % getMod())} {}
-
-    static i64 Mod;
-    constexpr static i64 getMod()
-    {
-        if (P > 0) {
-            return P;
-        }
-        else {
-            return Mod;
-        }
-    }
-    constexpr static void setMod(i64 Mod_)
-    {
-        Mod = Mod_;
-    }
-    constexpr i64 norm(i64 x) const
-    {
-        if (x < 0) {
-            x += getMod();
-        }
-        if (x >= getMod()) {
-            x -= getMod();
-        }
-        return x;
-    }
-    constexpr i64 val() const
-    {
-        return x;
-    }
-    explicit constexpr operator i64() const
-    {
-        return x;
-    }
-    constexpr MLong operator-() const
-    {
-        MLong res;
-        res.x = norm(getMod() - x);
-        return res;
-    }
-    constexpr MLong inv() const
-    {
-        assert(x != 0);
-        return power(*this, getMod() - 2);
-    }
-    constexpr MLong &operator*=(MLong rhs) &
-    {
-        x = mul(x, rhs.x, getMod());
-        return *this;
-    }
-    constexpr MLong &operator+=(MLong rhs) &
-    {
-        x = norm(x + rhs.x);
-        return *this;
-    }
-    constexpr MLong &operator-=(MLong rhs) &
-    {
-        x = norm(x - rhs.x);
-        return *this;
-    }
-    constexpr MLong &operator/=(MLong rhs) &
-    {
-        return *this *= rhs.inv();
-    }
-    friend constexpr MLong operator*(MLong lhs, MLong rhs)
-    {
-        MLong res = lhs;
-        res *= rhs;
-        return res;
-    }
-    friend constexpr MLong operator+(MLong lhs, MLong rhs)
-    {
-        MLong res = lhs;
-        res += rhs;
-        return res;
-    }
-    friend constexpr MLong operator-(MLong lhs, MLong rhs)
-    {
-        MLong res = lhs;
-        res -= rhs;
-        return res;
-    }
-    friend constexpr MLong operator/(MLong lhs, MLong rhs)
-    {
-        MLong res = lhs;
-        res /= rhs;
-        return res;
-    }
-    friend constexpr std::istream &operator>>(std::istream &is, MLong &a)
-    {
-        i64 v;
-        is >> v;
-        a = MLong(v);
-        return is;
-    }
-    friend constexpr std::ostream &operator<<(std::ostream &os, MLong const &a)
-    {
-        return os << a.val();
-    }
-    friend constexpr bool operator==(MLong lhs, MLong rhs)
-    {
-        return lhs.val() == rhs.val();
-    }
-    friend constexpr bool operator!=(MLong lhs, MLong rhs)
-    {
-        return lhs.val() != rhs.val();
-    }
-};
-
-template <> i64 MLong<0LL>::Mod = i64(1E18) + 9;
-
-template <int P> struct MInt {
-    int x;
-    constexpr MInt() : x{} {}
-    constexpr MInt(i64 x) : x{norm(x % getMod())} {}
-
-    static int Mod;
-    constexpr static int getMod()
-    {
-        if (P > 0) {
-            return P;
-        }
-        else {
-            return Mod;
-        }
-    }
-    constexpr static void setMod(int Mod_)
-    {
-        Mod = Mod_;
-    }
-    constexpr int norm(int x) const
-    {
-        if (x < 0) {
-            x += getMod();
-        }
-        if (x >= getMod()) {
-            x -= getMod();
-        }
-        return x;
-    }
-    constexpr int val() const
-    {
-        return x;
-    }
-    explicit constexpr operator int() const
-    {
-        return x;
-    }
-    constexpr MInt operator-() const
-    {
-        MInt res;
-        res.x = norm(getMod() - x);
-        return res;
-    }
-    constexpr MInt inv() const
-    {
-        assert(x != 0);
-        return power(*this, getMod() - 2);
-    }
-    constexpr MInt &operator*=(MInt rhs) &
-    {
-        x = 1LL * x * rhs.x % getMod();
-        return *this;
-    }
-    constexpr MInt &operator+=(MInt rhs) &
-    {
-        x = norm(x + rhs.x);
-        return *this;
-    }
-    constexpr MInt &operator-=(MInt rhs) &
-    {
-        x = norm(x - rhs.x);
-        return *this;
-    }
-    constexpr MInt &operator/=(MInt rhs) &
-    {
-        return *this *= rhs.inv();
-    }
-    friend constexpr MInt operator*(MInt lhs, MInt rhs)
-    {
-        MInt res = lhs;
-        res *= rhs;
-        return res;
-    }
-    friend constexpr MInt operator+(MInt lhs, MInt rhs)
-    {
-        MInt res = lhs;
-        res += rhs;
-        return res;
-    }
-    friend constexpr MInt operator-(MInt lhs, MInt rhs)
-    {
-        MInt res = lhs;
-        res -= rhs;
-        return res;
-    }
-    friend constexpr MInt operator/(MInt lhs, MInt rhs)
-    {
-        MInt res = lhs;
-        res /= rhs;
-        return res;
-    }
-    friend constexpr std::istream &operator>>(std::istream &is, MInt &a)
-    {
-        i64 v;
-        is >> v;
-        a = MInt(v);
-        return is;
-    }
-    friend constexpr std::ostream &operator<<(std::ostream &os, MInt const &a)
-    {
-        return os << a.val();
-    }
-    friend constexpr bool operator==(MInt lhs, MInt rhs)
-    {
-        return lhs.val() == rhs.val();
-    }
-    friend constexpr bool operator!=(MInt lhs, MInt rhs)
-    {
-        return lhs.val() != rhs.val();
-    }
-};
-
-template <> int MInt<0>::Mod = 998244353;
-
-template <int V, int P> constexpr MInt<P> CInv = MInt<P>(V).inv();
-
-constexpr int P = 1000000007;
-using Z = MInt<P>;
-
 namespace {
-[[maybe_unused]] constexpr std::uint_fast64_t mod998244353{998'244'353ULL};
-[[maybe_unused]] constexpr std::uint_fast64_t mod1e9p7{1'000'000'007ULL};
-[[maybe_unused]] constexpr double eps{1e-8};
+[[maybe_unused]] constexpr std::int_least64_t mod998244353{998'244'353LL};
+[[maybe_unused]] constexpr std::int_least64_t mod1e9p7{1'000'000'007LL};
+[[maybe_unused]] constexpr double eps{1e-10};
 template <typename T> constexpr T inf{std::numeric_limits<T>::max() / 4};
 template <typename T> constexpr T max{std::numeric_limits<T>::max()};
 
@@ -317,9 +59,13 @@ template <typename... Ts>
 struct is_tuple_t<std::tuple<Ts...>> : std::true_type {};
 template <typename... Ts>
 concept tuple = is_tuple_t<Ts...>::value;
+template <typename T, typename U = std::remove_cvref_t<T>>
+concept non_string_range =
+    !std::same_as<U, std::string> && (std::ranges::range<U> || pair<U>);
 } // namespace shelpam::concepts
 
-auto operator>>(auto &istream, auto &&t) -> decltype(istream)
+std::istream &operator>>(std::istream &istream,
+                         shelpam::concepts::non_string_range auto &&t)
 {
     using T = std::remove_cvref_t<decltype(t)>;
     static_assert(!shelpam::concepts::tuple<T>,
@@ -342,7 +88,11 @@ auto operator>>(auto &istream, auto &&t) -> decltype(istream)
 #else
 #define debug(...)
 #endif
-auto chmax(auto &value, auto const &other) noexcept -> bool
+void YesNo(bool yes)
+{
+    std::cout << (yes ? "Yes\n" : "No\n");
+}
+bool chmax(auto &value, auto const &other) noexcept
 {
     if (value < other) {
         value = other;
@@ -350,7 +100,7 @@ auto chmax(auto &value, auto const &other) noexcept -> bool
     }
     return false;
 }
-auto chmin(auto &value, auto const &other) noexcept -> bool
+bool chmin(auto &value, auto const &other) noexcept
 {
     if (value > other) {
         value = other;
@@ -360,58 +110,61 @@ auto chmin(auto &value, auto const &other) noexcept -> bool
 }
 constexpr auto sum_of(std::ranges::range auto const &coll) noexcept
 {
-    return std::accumulate(coll.begin(), coll.end(), Z{});
+    return std::accumulate(
+        coll.begin(), coll.end(),
+        typename std::remove_cvref_t<decltype(coll)>::value_type{});
 }
-constexpr auto pow(auto a, std::int_fast64_t b, std::uint_fast64_t p)
+template <typename T> constexpr T pow(T base, auto exp, std::integral auto p)
 {
-    static_assert(sizeof(a) > sizeof(int), "Use of int is bug-prone.");
-    if (b < 0) {
-        throw std::invalid_argument{"Invalid exponent. It should be positive."};
+    static_assert(sizeof(base) > sizeof(int), "Use of `int`s is bug-prone.");
+    if (exp < 0) {
+        base = pow(base, p - 2, p);
+        exp = -exp;
     }
-    decltype(a) res{1};
-    while (b != 0) {
-        if ((b & 1) == 1) {
-            res = res * a % p;
+    decltype(base) res{1};
+    while (exp != 0) {
+        if ((exp & 1) == 1) {
+            res = res * base % p;
         }
-        a = a * a % p;
-        b >>= 1;
+        base = base * base % p;
+        exp >>= 1;
     }
     return res;
 }
-auto binary_search(std::invocable<std::int_fast64_t> auto check,
-                   std::int_fast64_t ok, std::int_fast64_t ng,
-                   bool check_ok = true) -> std::int_fast64_t
+std::int_least64_t binary_search(std::invocable<std::int_least64_t> auto check,
+                                 std::int_least64_t ok, std::int_least64_t ng,
+                                 bool check_ok = true)
 {
     if (check_ok && !check(ok)) {
         throw std::invalid_argument{"check isn't true on 'ok'."};
     }
     while (std::abs(ok - ng) > 1) {
-        auto const x{(ok + ng) / 2};
+        auto const x = (ok + ng) / 2;
         (check(x) ? ok : ng) = x;
     }
     return ok;
 }
-constexpr auto lsb(std::signed_integral auto i) noexcept -> decltype(i)
+template <std::unsigned_integral T> constexpr T lsb(T i) noexcept
 {
     return i & -i;
 }
 // i mustn't be 0
-constexpr auto msb(std::unsigned_integral auto i) -> int
+constexpr int msb(std::unsigned_integral auto i)
 {
     if (i == 0) {
         throw std::invalid_argument{"i must be positive."};
     }
-    return sizeof(i) * CHAR_BIT - 1 - std::countl_zero(i);
+    return (sizeof(i) * CHAR_BIT) - 1 - std::countl_zero(i);
 }
-/*[[maybe_unused]] auto gen_rand() noexcept*/
-/*{*/
-/*  static std::mt19937_64 rng(*/
-/*      std::chrono::steady_clock::now().time_since_epoch().count());*/
-/*  return rng();*/
-/*}*/
-void solve_case();
+// [[maybe_unused]] auto gen_rand() noexcept
+// {
+//     static std::mt19937_64 rng(
+//         std::chrono::steady_clock::now().time_since_epoch().count());
+//     return rng();
+// }
 } // namespace
-auto main() -> int
+void solve_case();
+int main()
 {
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
@@ -420,107 +173,106 @@ auto main() -> int
     int t{1};
     // std::cin >> t;
     for (int i{}; i != t; ++i) {
-        try {
-            std::cerr << "Test case " << i << '\n';
-            solve_case();
-        }
-        catch (std::exception &e) {
-            std::cerr << "Exception: " << e.what() << '\n';
-        }
+#ifndef ONLINE_JUDGE
+        std::cerr << "Test case " << i << '\n';
+#endif
+        solve_case();
     }
     return 0;
 }
-namespace {
-#define int i64
+using i64 = std::int_least64_t;
+using i128 = __int128_t;
+using u64 = std::uint_least64_t;
+using u128 = __uint128_t;
+#define int long long
 void solve_case()
 {
+    using namespace ::shelpam;
     int n, q;
     std::cin >> n >> q;
     std::string s;
     std::cin >> s;
-    s.insert(s.begin(), 0);
+    s.insert(s.begin(), '#');
 
-    using v1 = std::vector<Z>;
-    using v2 = std::vector<v1>;
-    using v3 = std::vector<v2>;
-    using v4 = std::vector<v3>;
-    int fl{};
-    v4 f(2, v3(n + 1, v2(n + 1, v1(3))));
-    // f[i][j][k]: in first i rounds, selecting j x, k y, and (n-j-k) z.
-    f[fl][0][0].assign(3, 1);
-
-    auto const questions{std::ranges::count(s, '?')};
-
+    std::vector<int> ques(n + 1);
     for (int i{1}; i != n + 1; ++i) {
-        fl ^= 1;
-        f[fl].assign(n + 1, v2(n + 1, v1(3)));
+        ques[i] = ques[i - 1] + (s[i] == '?');
+    }
+    std::vector f(n + 1,
+                  std::vector(n + 1, std::vector(n + 1, std::array<i64, 3>{})));
+    if (s[1] == '?') {
+        f[1][1][0][0] = 1;
+        f[1][0][1][1] = 1;
+        f[1][0][0][2] = 1;
+    }
+    else {
+        f[1][0][0][s[1] - 'a'] = 1;
+    }
+    for (int i{2}; i != s.size(); ++i) {
         for (int j{}; j != n + 1; ++j) {
-            for (int k{}; k + j != n + 1; ++k) {
-                if (s[i] != '?') {
-                    auto const to{s[i] - 'a'};
-                    for (int from{}; from != 3; ++from) {
-                        if (to != from) {
-                            f[fl][j][k][to] += f[fl ^ 1][j][k][from];
-                        }
-                    }
-                }
-                else {
-                    auto const l{questions - j - k};
-                    for (int from{}; from != 3; ++from) {
-                        for (int to{}; to != 3; ++to) {
-                            if (from == to) {
-                                continue;
-                            }
-                            std::array<int, 3> d{};
-                            d[to] = 1;
-                            if (j >= d[0] && k >= d[1] && l >= d[2]) {
-                                f[fl][j][k][to] +=
-                                    f[fl ^ 1][j - d[0]][k - d[1]][from];
+            for (int k{}; k != n + 1; ++k) {
+                for (char c{'a'}; c != 'c' + 1; ++c) {
+                    if (s[i] == '?') {
+                        for (char d{'a'}; d != 'c' + 1; ++d) {
+                            if (c != d) {
+                                std::array<int, 2> diff{d == 'a' ? -1 : 0,
+                                                        d == 'b' ? -1 : 0};
+                                if (j + diff[0] >= 0 && k + diff[1] >= 0) {
+                                    f[i][j][k][d - 'a'] +=
+                                        f[i - 1][j + diff[0]][k + diff[1]]
+                                         [c - 'a'];
+                                    f[i][j][k][d - 'a'] %= mod1e9p7;
+                                }
                             }
                         }
                     }
+                    else {
+                        if (c != s[i]) {
+                            f[i][j][k][s[i] - 'a'] += f[i - 1][j][k][c - 'a'];
+                            f[i][j][k][s[i] - 'a'] %= mod1e9p7;
+                        }
+                    }
                 }
             }
         }
     }
+    // debug("f 1", f[1][0][0]['a' - 'a']);
+    // debug("1", f[1][1][0]['a' - 'a']);
+    // debug("1", f[2][1][1]['b' - 'a']);
+    // debug("1", f[3][2][1]['a' - 'a']);
 
-    v3 a(n + 1, v2(n + 1, v1(n + 1)));
-    for (int i{}; i != questions + 1; ++i) {
-        for (int j{}; i + j != questions + 1; ++j) {
-            a[i][j][questions - i - j] = sum_of(f[fl][i][j]);
-        }
-    }
-
-    using ll = i64;
-    v3 p(n + 2, v2(n + 2, v1(n + 2)));
-
-    for (ll i = 0; i <= n; i++) {
-        for (ll j = 0; j <= n; j++) {
-            for (ll k = 0; k <= n; k++) {
-                p[i + 1][j + 1][k + 1] = a[i][j][k];
+    std::vector p(n + 2, std::vector(n + 2, std::vector<i64>(n + 2)));
+    for (int i{}; i != n + 1; ++i) {
+        for (int j{}; j != n + 1; ++j) {
+            auto k = ques[n] - i - j;
+            if (k >= 0) {
+                p[i + 1][j + 1][k + 1] = sum_of(f[n][i][j]) % mod1e9p7;
             }
         }
     }
-    for (ll i = 1; i <= n + 1; i++) {
-        for (ll j = 1; j <= n + 1; j++) {
-            for (ll k = 1; k <= n + 1; k++) {
-                p[i][j][k] +=
-                    (p[i - 1][j][k] + p[i][j - 1][k] + p[i][j][k - 1]) -
-                    (p[i][j - 1][k - 1] + p[i - 1][j][k - 1] +
-                     p[i - 1][j - 1][k]) +
-                    p[i - 1][j - 1][k - 1];
+    // debug("p", p);
+    for (int i{1}; i != n + 2; ++i) {
+        for (int j{1}; j != n + 2; ++j) {
+            for (int k{1}; k != n + 2; ++k) {
+                p[i][j][k] += p[i - 1][j][k] + p[i][j - 1][k] + p[i][j][k - 1] -
+                              (p[i - 1][j - 1][k] + p[i - 1][j][k - 1] +
+                               p[i][j - 1][k - 1]) +
+                              (p[i - 1][j - 1][k - 1]);
+                p[i][j][k] %= mod1e9p7;
+                p[i][j][k] += mod1e9p7;
+                p[i][j][k] %= mod1e9p7;
             }
         }
     }
+    // debug("p", p);
 
-    auto const div2{pow(2LL, mod1e9p7 - 2, mod1e9p7)};
     for (int i{}; i != q; ++i) {
         int x, y, z;
         std::cin >> x >> y >> z;
         chmin(x, n);
         chmin(y, n);
         chmin(z, n);
-        std::cout << p[x + 1][y + 1][z + 1] * div2 << '\n';
+        // std::cout << x << ' ' << y << ' ' << z << '\n';
+        std::cout << p[x + 1][y + 1][z + 1] << '\n';
     }
 }
-} // namespace

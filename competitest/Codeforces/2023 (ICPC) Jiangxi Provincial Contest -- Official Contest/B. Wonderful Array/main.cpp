@@ -1,258 +1,206 @@
+#pragma once
+
+#ifndef __cpp_concepts
+#error This lib requires at least cpp20 to work.
+#endif
+
 // Problem: B. Wonderful Array
 // Contest: 2023 (ICPC) Jiangxi Provincial Contest -- Official Contest
 // Judge: Codeforces
 // URL: https://codeforces.com/gym/104385/problem/B
-// Memory Limit: 512
-// Time Limit: 1000
-// Start: Wed 15 May 2024 05:55:23 PM CST
+// Start: Sat 11 Oct 2025 01:35:20 PM CST
 // Author: ShelpAm
 
-#include <bits/stdc++.h>
-
-#ifdef __cpp_lib_ranges
+// #include <bits/stdc++.h>
+#include <algorithm>
+#include <bit>
+#include <bitset>
+#include <cassert>
+#include <chrono>
+#include <climits>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <deque>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <list>
+#include <map>
+#include <numbers>
+#include <numeric>
+#include <queue>
+#include <random>
 #include <ranges>
-#endif
-
-using i64 = std::int_fast64_t;
-using u64 = std::uint_fast64_t;
-using vi = std::vector<i64>;
-using vvi = std::vector<vi>;
-using vvvi = std::vector<vvi>;
-using vvvvi = std::vector<vvvi>;
-using vu = std::vector<u64>;
-using vvu = std::vector<vu>;
-using vvvu = std::vector<vvu>;
-using vvvvu = std::vector<vvvu>;
-using vb = std::vector<bool>;
-using vvb = std::vector<vb>;
-using vc = std::vector<char>;
-using vvc = std::vector<vc>;
-using vd = std::vector<double>;
-using vvd = std::vector<vd>;
-using pii = std::pair<i64, i64>;
-using puu = std::pair<u64, u64>;
-using triplei = std::tuple<i64, i64, i64>;
-using tripleu = std::tuple<u64, u64, u64>;
-using quadratici = std::tuple<i64, i64, i64, i64>;
-using quadraticu = std::tuple<u64, u64, u64, u64>;
+#include <set>
+#include <stack>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
 namespace {
-template <typename T>
-[[maybe_unused]] constexpr T mod{static_cast<T>(998244353)};
-[[maybe_unused]] constexpr std::int_fast64_t mod1e9{1000'000'009};
-template <typename T>
-[[maybe_unused]] constexpr T inf{std::numeric_limits<T>::max() / 2};
-[[maybe_unused]] constexpr double eps{1e-8};
+[[maybe_unused]] constexpr std::uint_least64_t mod998244353{998'244'353ULL};
+[[maybe_unused]] constexpr std::uint_least64_t mod1e9p7{1'000'000'007ULL};
+[[maybe_unused]] constexpr double eps{1e-10};
+template <typename T> constexpr T inf{std::numeric_limits<T>::max() / 4};
+template <typename T> constexpr T max{std::numeric_limits<T>::max()};
 
-#ifdef __cpp_concepts
-namespace impl {
 // Concepts.
+namespace shelpam::concepts {
+template <typename> struct is_pair_t : std::false_type {};
+template <typename T, typename U>
+struct is_pair_t<std::pair<T, U>> : std::true_type {};
 template <typename T>
-concept pair = requires(T t) {
-  t.first;
-  t.second;
-};
-template <typename T>
-concept string_like = std::same_as<std::string, std::remove_cvref_t<T>> ||
-                      std::same_as<std::string_view, std::remove_cvref_t<T>> ||
-                      std::convertible_to<std::remove_cvref_t<T>, char const*>;
+concept pair = is_pair_t<T>::value;
 template <typename> struct is_tuple_t : std::false_type {};
-template <typename... T>
-struct is_tuple_t<std::tuple<T...>> : std::true_type {};
-template <typename... T>
-concept tuple = is_tuple_t<T...>::value;
-} // namespace impl
+template <typename... Ts>
+struct is_tuple_t<std::tuple<Ts...>> : std::true_type {};
+template <typename... Ts>
+concept tuple = is_tuple_t<Ts...>::value;
+template <typename T, typename U = std::remove_cvref_t<T>>
+concept non_string_range =
+    !std::same_as<U, std::string> && (std::ranges::range<U> || pair<U>);
+} // namespace shelpam::concepts
 
-constexpr std::istream& operator>>(std::istream& istream, auto&& t)
+std::istream &operator>>(std::istream &istream,
+                         shelpam::concepts::non_string_range auto &&t)
 {
-  using T = std::remove_cvref_t<decltype(t)>;
-#ifdef __cpp_lib_ranges
-  if constexpr (std::ranges::range<T>) {
-    for (auto& ele : t) {
-      istream >> ele;
+    using T = std::remove_cvref_t<decltype(t)>;
+    static_assert(!shelpam::concepts::tuple<T>,
+                  "tuple: not implemented yet.\n");
+    if constexpr (std::ranges::range<T>) {
+        for (auto &ele : t) {
+            istream >> ele;
+        }
     }
-  }
-#endif
-  else if constexpr (impl::pair<T>) {
-    istream >> t.first >> t.second;
-  }
-  else if constexpr (impl::tuple<T>) {
-    static_assert(!impl::tuple<T>, "[operator>>] tuple: not implemented yet.");
-  }
-  else {
-    istream >> t;
-  }
-  return istream;
-}
-constexpr void print(auto const& t, int const depth = 0)
-{
-  using T = std::remove_cvref_t<decltype(t)>;
-  if constexpr (impl::string_like<T>) {
-    std::cout << t;
-  }
-#ifdef __cpp_lib_ranges
-  else if constexpr (std::ranges::range<T>) {
-    for (auto const& ele : t) {
-      print(ele, depth + 1);
-    }
-    if (depth != 0) {
-      std::cout << '\n';
-    }
-  }
-#endif
-  else if constexpr (impl::pair<T>) {
-    std::cout << "{ " << t.first << ", ";
-    print(t.second, depth + 1);
-    std::cout << " } ";
-  }
-  else if constexpr (impl::tuple<T>) {
-    static_assert(!impl::tuple<T>, "[print] tuple: not implemented yet.\n");
-  }
-  else {
-    std::cout << t << ' ';
-  }
-
-  if (depth == 0) {
-    std::cout << '\n';
-  }
-}
-constexpr void debug([[maybe_unused]] std::string_view s,
-                     [[maybe_unused]] auto const& t)
-{
-#ifndef ONLINE_JUDGE
-  std::cout << "[debug] " << s << ": ";
-  if constexpr (std::ranges::range<decltype(t)>) {
-    std::cout << '\n';
-  }
-  print(t);
-  std::cout.flush();
-#endif
-}
-constexpr bool check_max(auto& value, auto const& other)
-#else
-template <typename T> constexpr bool check_max(T& value, T const& other)
-#endif
-{
-  if (value < other) {
-    value = other;
-    return true;
-  }
-  return false;
-}
-#ifdef __cpp_concepts
-constexpr bool check_min(auto& value, auto const& other)
-#else
-template <typename T> constexpr bool check_min(T& value, T const& other)
-#endif
-{
-  if (value > other) {
-    value = other;
-    return true;
-  }
-  return false;
-}
-#ifdef __cpp_concepts
-constexpr auto sum_of(auto const& coll) noexcept
-#else
-template <typename Range> constexpr auto sum(Range const& coll) noexcept
-#endif
-{
-  return std::accumulate(coll.begin(), coll.end(), std::int_fast64_t{});
-}
-#ifdef __cpp_concepts
-constexpr auto pow(auto a, std::int_fast64_t b,
-                   std::int_fast64_t const p) noexcept
-#else
-template <typename T> constexpr auto pow(T a, u64 b, u64 const p) noexcept
-#endif
-{
-  assert(b >= 0);
-  decltype(a) res{1};
-  while (b != 0) {
-    if ((b & 1) == 1) {
-      res = res * a % p;
-    }
-    a = a * a % p;
-    b >>= 1;
-  }
-  return res;
-}
-[[maybe_unused]] constexpr std::int_fast64_t lsb(std::int_fast64_t const i)
-{
-  return i & (-i);
-}
-// i mustn't be 0
-[[maybe_unused]] constexpr std::size_t msb(std::uint_fast64_t const i)
-{
-  assert(i != 0);
-  return sizeof(u64) * CHAR_BIT - 1 - __builtin_clzll(i);
-}
-#ifdef __cpp_concepts
-void solve_all_cases(auto solve_case)
-#else
-template <typename F> void solve_all_cases(F solve_case)
-#endif
-{
-  constexpr auto my_precision{10};
-  [[maybe_unused]] auto const default_precision{
-      std::cout.precision(my_precision)};
-  std::cout << std::fixed;
-
-  int t{1};
-  // std::cin >> t;
-  using return_type = decltype(solve_case());
-  for (int i = 0; i != t; ++i) {
-    if constexpr (
-#ifdef __cpp_concepts
-        std::same_as<return_type, void>
-#else
-        std::is_same_v<return_type, void>
-#endif
-    ) {
-      solve_case();
-    }
-    else if constexpr (
-#ifdef __cpp_concepts
-        std::same_as<return_type, bool>
-#else
-        std::is_same_v<return_type, bool>
-#endif
-    ) {
-      print(solve_case() ? "YES" : "NO");
+    else if constexpr (shelpam::concepts::pair<T>) {
+        istream >> t.first >> t.second;
     }
     else {
-      print(solve_case());
+        istream >> t;
     }
-  }
+    return istream;
 }
-} // namespace
-
-auto solve_case()
+#ifndef ONLINE_JUDGE
+#include "/home/shelpam/Documents/projects/competitive-programming/libs/debug.h"
+#else
+#define debug(...)
+#endif
+void YesNo(bool yes)
 {
-  using namespace std;
-  int k;
-  cin >> k;
-  vector<int> a(k);
-  cin >> a;
-  int n, m, x;
-  cin >> n >> m >> x;
-  a.insert(a.begin(), 0);
-  int ans{};
-  int rounds{n / k};
-  int last{};
-  for (int i{1}; i != k + 1; ++i) {
-    a[i] += a[i - 1];
-    if (i <= n % k && a[i]) {
-      ++last;
-    }
-  }
-
-  cout << ans;
+    std::cout << (yes ? "Yes\n" : "No\n");
 }
-
+bool chmax(auto &value, auto const &other) noexcept
+{
+    if (value < other) {
+        value = other;
+        return true;
+    }
+    return false;
+}
+bool chmin(auto &value, auto const &other) noexcept
+{
+    if (value > other) {
+        value = other;
+        return true;
+    }
+    return false;
+}
+constexpr auto sum_of(std::ranges::range auto const &coll) noexcept
+{
+    return std::accumulate(
+        coll.begin(), coll.end(),
+        typename std::remove_cvref_t<decltype(coll)>::value_type{});
+}
+template <typename T> constexpr T pow(T base, auto exp, std::integral auto p)
+{
+    static_assert(sizeof(base) > sizeof(int), "Use of `int`s is bug-prone.");
+    if (exp < 0) {
+        base = pow(base, p - 2, p);
+        exp = -exp;
+    }
+    decltype(base) res{1};
+    while (exp != 0) {
+        if ((exp & 1) == 1) {
+            res = res * base % p;
+        }
+        base = base * base % p;
+        exp >>= 1;
+    }
+    return res;
+}
+std::int_least64_t binary_search(std::invocable<std::int_least64_t> auto check,
+                                 std::int_least64_t ok, std::int_least64_t ng,
+                                 bool check_ok = true)
+{
+    if (check_ok && !check(ok)) {
+        throw std::invalid_argument{"check isn't true on 'ok'."};
+    }
+    while (std::abs(ok - ng) > 1) {
+        auto const x = (ok + ng) / 2;
+        (check(x) ? ok : ng) = x;
+    }
+    return ok;
+}
+template <std::unsigned_integral T> constexpr T lsb(T i) noexcept
+{
+    return i & -i;
+}
+// i mustn't be 0
+constexpr int msb(std::unsigned_integral auto i)
+{
+    if (i == 0) {
+        throw std::invalid_argument{"i must be positive."};
+    }
+    return (sizeof(i) * CHAR_BIT) - 1 - std::countl_zero(i);
+}
+// [[maybe_unused]] auto gen_rand() noexcept
+// {
+//     static std::mt19937_64 rng(
+//         std::chrono::steady_clock::now().time_since_epoch().count());
+//     return rng();
+// }
+} // namespace
+void solve_case();
 int main()
 {
-  std::ios::sync_with_stdio(false), std::cin.tie(nullptr);
-  solve_all_cases(solve_case);
-  return 0;
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    constexpr auto my_precision{10};
+    std::cout << std::fixed << std::setprecision(my_precision);
+    int t{1};
+    // std::cin >> t;
+    for (int i{}; i != t; ++i) {
+#ifndef ONLINE_JUDGE
+        std::cerr << "Test case " << i << '\n';
+#endif
+        solve_case();
+    }
+    return 0;
+}
+using i64 = std::int_least64_t;
+using i128 = __int128_t;
+using u64 = std::uint_least64_t;
+using u128 = __uint128_t;
+void solve_case()
+{
+    using namespace ::shelpam;
+    i64 k;
+    std::cin >> k;
+    std::vector<i64> a(k);
+    std::cin >> a;
+    i64 n, m, x;
+    std::cin >> n >> m >> x;
+
+    for (auto &e : a) {
+        e %= m;
+    }
+
+    i128 s = sum_of(a);
+    i128 t = (x % m) + (s * (n / k));
+    t += std::accumulate(a.begin(), a.begin() + n % k, 0LL);
+    std::cout << n - static_cast<i64>(t / m) << '\n';
 }

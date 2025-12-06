@@ -1,24 +1,53 @@
-/*Problem: P3372 【模板】线段树 1*/
-/*Contest: unknown_contest*/
-/*Judge: Luogu*/
-/*URL: https://www.luogu.com.cn/problem/P3372*/
-/*Start: Wed 07 Aug 2024 09:59:27 PM CST*/
-/*Author: ShelpAm*/
+#pragma once
 
-#include <bits/stdc++.h>
-
-#ifdef __cpp_lib_ranges
-#include <ranges>
+#ifndef __cpp_concepts
+#error This lib requires at least cpp20 to work.
 #endif
 
-namespace {
-[[maybe_unused]] constexpr std::int_fast64_t mod998244353{998'244'353LL};
-[[maybe_unused]] constexpr std::int_fast64_t mod1e9p7{1'000'000'007LL};
-[[maybe_unused]] constexpr double eps{1e-8};
-template <typename T>
-[[maybe_unused]] constexpr T inf{std::numeric_limits<T>::max() / 2};
+// Problem: P3372 【模板】线段树 1
+// Contest: unknown_contest
+// Judge: Luogu
+// URL: https://www.luogu.com.cn/problem/P3372
+// Start: Thu 09 Oct 2025 01:09:54 PM CST
+// Author: ShelpAm
 
-#ifdef __cpp_concepts
+// #include <bits/stdc++.h>
+#include <algorithm>
+#include <bit>
+#include <bitset>
+#include <cassert>
+#include <chrono>
+#include <climits>
+#include <concepts>
+#include <cstddef>
+#include <cstdint>
+#include <deque>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <list>
+#include <map>
+#include <numbers>
+#include <numeric>
+#include <queue>
+#include <random>
+#include <ranges>
+#include <set>
+#include <stack>
+#include <string>
+#include <string_view>
+#include <tuple>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
+namespace {
+[[maybe_unused]] constexpr std::uint_least64_t mod998244353{998'244'353ULL};
+[[maybe_unused]] constexpr std::uint_least64_t mod1e9p7{1'000'000'007ULL};
+[[maybe_unused]] constexpr double eps{1e-10};
+template <typename T> constexpr T inf{std::numeric_limits<T>::max() / 4};
+template <typename T> constexpr T max{std::numeric_limits<T>::max()};
+
 // Concepts.
 namespace shelpam::concepts {
 template <typename> struct is_pair_t : std::false_type {};
@@ -31,291 +60,296 @@ template <typename... Ts>
 struct is_tuple_t<std::tuple<Ts...>> : std::true_type {};
 template <typename... Ts>
 concept tuple = is_tuple_t<Ts...>::value;
+template <typename T, typename U = std::remove_cvref_t<T>>
+concept non_string_range =
+    !std::same_as<U, std::string> && (std::ranges::range<U> || pair<U>);
 } // namespace shelpam::concepts
 
-constexpr auto operator>>(auto &istream, auto &&t) -> std::istream &
+std::istream &operator>>(std::istream &istream,
+                         shelpam::concepts::non_string_range auto &&t)
 {
-  using T = std::remove_cvref_t<decltype(t)>;
-  static_assert(!shelpam::concepts::tuple<T>, "tuple: not implemented yet.\n");
-#ifdef __cpp_lib_ranges
-  if constexpr (std::ranges::range<T>) {
-    for (auto &ele : t) {
-      istream >> ele;
+    using T = std::remove_cvref_t<decltype(t)>;
+    static_assert(!shelpam::concepts::tuple<T>,
+                  "tuple: not implemented yet.\n");
+    if constexpr (std::ranges::range<T>) {
+        for (auto &ele : t) {
+            istream >> ele;
+        }
     }
-  }
-#endif
-  else if constexpr (shelpam::concepts::pair<T>) {
-    istream >> t.first >> t.second;
-  }
-  else {
-    istream >> t;
-  }
-  return istream;
+    else if constexpr (shelpam::concepts::pair<T>) {
+        istream >> t.first >> t.second;
+    }
+    else {
+        istream >> t;
+    }
+    return istream;
 }
-#endif
 #ifndef ONLINE_JUDGE
 #include "/home/shelpam/Documents/projects/competitive-programming/libs/debug.h"
 #else
 #define debug(...)
 #endif
-template <typename T, typename U>
-constexpr auto chmax(T &value, U const &other) noexcept -> bool
+void YesNo(bool yes)
 {
-  if (value < other) {
-    value = other;
-    return true;
-  }
-  return false;
+    std::cout << (yes ? "Yes\n" : "No\n");
 }
-template <typename T, typename U>
-constexpr auto chmin(T &value, U const &other) noexcept -> bool
+bool chmax(auto &value, auto const &other) noexcept
 {
-  if (value > other) {
-    value = other;
-    return true;
-  }
-  return false;
+    if (value < other) {
+        value = other;
+        return true;
+    }
+    return false;
 }
-template <typename C> constexpr auto sum_of(C const &coll) noexcept
+bool chmin(auto &value, auto const &other) noexcept
 {
-  return std::accumulate(coll.begin(), coll.end(), std::int_fast64_t{});
+    if (value > other) {
+        value = other;
+        return true;
+    }
+    return false;
 }
-constexpr auto pow(int a, std::int_fast64_t b,
-                   std::uint_fast64_t p) noexcept = delete;
-template <typename T>
-constexpr auto pow(T a, std::int_fast64_t b, std::uint_fast64_t p) noexcept
+constexpr auto sum_of(std::ranges::range auto const &coll) noexcept
 {
-  assert(b >= 0);
-  decltype(a) res{1};
-  while (b != 0) {
-    if ((b & 1) == 1) {
-      res = res * a % p;
-    }
-    a = a * a % p;
-    b >>= 1;
-  }
-  return res;
+    return std::accumulate(
+        coll.begin(), coll.end(),
+        typename std::remove_cvref_t<decltype(coll)>::value_type{});
 }
-template <typename F>
-auto binary_search(F check, std::int_fast64_t ok, std::int_fast64_t ng,
-                   bool check_ok = true) noexcept -> std::int_fast64_t
+template <typename T> constexpr T pow(T base, auto exp, std::integral auto p)
 {
-  if (check_ok) {
-    assert(check(ok));
-  }
-  while (std::abs(ok - ng) > 1) {
-    auto const x{(ok + ng) / 2};
-    (check(x) ? ok : ng) = x;
-  }
-  return ok;
-}
-template <typename T> constexpr auto lsb(T i) noexcept -> T
-{
-  static_assert(std::is_signed_v<T>,
-                "lsb is implemented based on signed integers.");
-  return i & -i;
-}
-// i mustn't be 0
-template <typename T>
-constexpr auto count_leading_zeros(T const &i) noexcept -> int
-{
-  assert(i != 0);
-  if constexpr (std::is_same_v<T, unsigned long long>) {
-    return __builtin_clzll(i);
-  }
-  if constexpr (std::is_same_v<T, unsigned long>) {
-    return __builtin_clzl(i);
-  }
-  if constexpr (std::is_same_v<T, unsigned int>) {
-    return __builtin_clz(i);
-  }
-  /*static_assert(false, "Unsupported type");*/
-  static_assert(!std::is_signed_v<T>,
-                "msb is implemented based on unsigned integers");
-  return -1; // Unreachable.
-}
-// i mustn't be 0
-template <typename T> constexpr auto msb(T i) noexcept -> int
-{
-  return static_cast<int>(sizeof(T) * CHAR_BIT - 1 - count_leading_zeros(i));
-}
-/*[[maybe_unused]] auto gen_rand() noexcept*/
-/*{*/
-/*  static std::mt19937_64 rng(*/
-/*      std::chrono::steady_clock::now().time_since_epoch().count());*/
-/*  return rng();*/
-/*}*/
-void solve_case() noexcept;
-} // namespace
-auto main() -> int
-{
-  std::ios::sync_with_stdio(false);
-  std::cin.tie(nullptr);
-  constexpr auto my_precision{10};
-  std::cout << std::fixed << std::setprecision(my_precision);
-  int t{1};
-  /*std::cin >> t;*/
-  for (int i{}; i != t; ++i) {
-    solve_case();
-  }
-  return 0;
-}
-namespace {
-using i64 = std::int_fast64_t;
-using u64 = std::uint_fast64_t;
-class Segment_tree {
-  struct Lazy_tag {
-    auto operator+=(Lazy_tag const &rhs) -> Lazy_tag &
-    {
-      addition += rhs.addition;
-      return *this;
+    static_assert(sizeof(base) > sizeof(int), "Use of `int`s is bug-prone.");
+    if (exp < 0) {
+        base = pow(base, p - 2, p);
+        exp = -exp;
     }
-
-    std::int_fast64_t addition{};
-  };
-
-  struct Node {
-    int left_end{};
-    int right_end{};
-  };
-
-  struct Info {
-    friend auto operator+(Info lhs, Info const &rhs) -> Info
-    {
-      return lhs += rhs;
-    }
-
-    auto operator+=(Info const &rhs) -> Info &
-    {
-      sum += rhs.sum;
-      return *this;
-    }
-
-    void apply(Lazy_tag const &tag, int const segment_length)
-    {
-      sum += tag.addition * segment_length;
-    }
-
-    std::int_fast64_t sum{};
-  };
-
-public:
-  explicit Segment_tree(int const l, int const r)
-      : _nodes(4 * (r - l + 1) + 1), _info(4 * (r - l + 1) + 1),
-        _lazy_tags(4 * (r - l + 1) + 1)
-  {
-    build_tree(l, r, 1);
-  }
-
-  void apply(int const l, int const r, Lazy_tag const &tag)
-  {
-    apply_impl(l, r, 1, tag);
-  }
-
-  auto query(int const l, int const r) -> Info
-  {
-    return query_impl(l, r, 1);
-  }
-
-private:
-  // Sets up segments that nodes manage.
-  void build_tree(int const l, int const r, int const u)
-  {
-    _nodes[u].left_end = l;
-    _nodes[u].right_end = r;
-
-    if (l != r) {
-      auto const m{(l + r) / 2};
-      build_tree(l, m, u * 2);
-      build_tree(m + 1, r, u * 2 + 1);
-    }
-  }
-
-  void do_lazy_propagation(std::size_t const u)
-  {
-
-    if (!is_leaf(u)) {
-      _lazy_tags[u * 2] += _lazy_tags[u];
-      _lazy_tags[u * 2 + 1] += _lazy_tags[u];
-      _info[u * 2].apply(_lazy_tags[u],
-                         _nodes[u * 2].right_end - _nodes[u * 2].left_end + 1);
-      _info[u * 2 + 1].apply(_lazy_tags[u], _nodes[u * 2 + 1].right_end -
-                                                _nodes[u * 2 + 1].left_end + 1);
-    }
-
-    _lazy_tags[u] = {};
-  }
-
-  void apply_impl(int const l, int const r, std::size_t const u,
-                  Lazy_tag const &tag)
-  {
-    _info[u].apply(tag, r - l + 1);
-
-    if (l <= _nodes[u].left_end && _nodes[u].right_end <= r) {
-      _lazy_tags[u] += tag;
-      return;
-    }
-
-    if (_nodes[u * 2].right_end >= l) {
-      apply_impl(l, std::min(r, _nodes[u * 2].right_end), u * 2, tag);
-    }
-    if (_nodes[u * 2 + 1].left_end <= r) {
-      apply_impl(std::max(_nodes[u * 2 + 1].left_end, l), r, u * 2 + 1, tag);
-    }
-  }
-
-  // We assume that [l, r] contains [_nodes[u].left_end, _nodes[u].right_end].
-  [[nodiscard]] auto query_impl(int const l, int const r,
-                                std::size_t const u) -> Info
-  {
-    // If [l, r] nests node u, the segment node doesn't have to be divided
-    // anymore. So we direct return the info of this node.
-    if (l <= _nodes[u].left_end && _nodes[u].right_end <= r) {
-      return _info[u];
-    }
-
-    do_lazy_propagation(u);
-
-    Info res;
-    if (_nodes[u * 2].right_end >= l) {
-      res += query_impl(l, r, u * 2);
-    }
-    if (_nodes[u * 2 + 1].left_end <= r) {
-      res += query_impl(l, r, u * 2 + 1);
+    decltype(base) res{1};
+    while (exp != 0) {
+        if ((exp & 1) == 1) {
+            res = res * base % p;
+        }
+        base = base * base % p;
+        exp >>= 1;
     }
     return res;
-  }
-
-  [[nodiscard]] auto is_leaf(std::size_t const u) const -> bool
-  {
-    return _nodes[u].left_end == _nodes[u].right_end;
-  }
-
-  std::vector<Node> _nodes;
-  std::vector<Info> _info;
-  std::vector<Lazy_tag> _lazy_tags;
-};
-void solve_case() noexcept
-{
-  int n, m;
-  std::cin >> n >> m;
-  Segment_tree segtree(1, n);
-  for (int i{1}; i != n + 1; ++i) {
-    int x;
-    std::cin >> x;
-    segtree.apply(i, i, {.addition = x});
-  }
-  for (int i{}; i != m; ++i) {
-    int o, x, y;
-    std::cin >> o >> x >> y;
-    if (o == 1) {
-      int k;
-      std::cin >> k;
-      segtree.apply(x, y, {.addition = k});
-    }
-    else {
-      std::cout << segtree.query(x, y).sum << '\n';
-    }
-  }
 }
+std::int_least64_t binary_search(std::invocable<std::int_least64_t> auto check,
+                                 std::int_least64_t ok, std::int_least64_t ng,
+                                 bool check_ok = true)
+{
+    if (check_ok && !check(ok)) {
+        throw std::invalid_argument{"check isn't true on 'ok'."};
+    }
+    while (std::abs(ok - ng) > 1) {
+        auto const x = (ok + ng) / 2;
+        (check(x) ? ok : ng) = x;
+    }
+    return ok;
+}
+template <std::unsigned_integral T> constexpr T lsb(T i) noexcept
+{
+    return i & -i;
+}
+// i mustn't be 0
+constexpr int msb(std::unsigned_integral auto i)
+{
+    if (i == 0) {
+        throw std::invalid_argument{"i must be positive."};
+    }
+    return (sizeof(i) * CHAR_BIT) - 1 - std::countl_zero(i);
+}
+// [[maybe_unused]] auto gen_rand() noexcept
+// {
+//     static std::mt19937_64 rng(
+//         std::chrono::steady_clock::now().time_since_epoch().count());
+//     return rng();
+// }
 } // namespace
+void solve_case();
+int main()
+{
+    std::ios::sync_with_stdio(false);
+    std::cin.tie(nullptr);
+    constexpr auto my_precision{10};
+    std::cout << std::fixed << std::setprecision(my_precision);
+    int t{1};
+    // std::cin >> t;
+    for (int i{}; i != t; ++i) {
+#ifndef ONLINE_JUDGE
+        std::cerr << "Test case " << i << '\n';
+#endif
+        solve_case();
+    }
+    return 0;
+}
+using i64 = std::int_least64_t;
+using i128 = __int128_t;
+using u64 = std::uint_least64_t;
+using u128 = __uint128_t;
+namespace shelpam {
+
+// NOLINTBEGIN(readability-math-missing-parentheses)
+class Segment_tree {
+    // 不包含u节点，只代表u的儿子的懒标记
+    struct Lazy_tag {
+        auto operator+=(Lazy_tag const &rhs) -> Lazy_tag &
+        {
+            addition += rhs.addition;
+            return *this;
+        }
+
+        std::int_fast64_t addition{};
+    };
+
+    struct Node {
+        struct Info {
+            std::int_fast64_t sum{};
+            std::int_fast64_t max{
+                std::numeric_limits<std::int_fast64_t>::min()};
+            std::int_fast64_t min{
+                std::numeric_limits<std::int_fast64_t>::max()};
+        };
+
+        Node &operator+=(Node const &rhs)
+        {
+            info.sum += rhs.info.sum;
+            info.max = std::max(info.max, rhs.info.max);
+            info.min = std::min(info.min, rhs.info.min);
+            return *this;
+        }
+
+        Node &operator+=(Lazy_tag const &tag)
+        {
+            info.sum += tag.addition * (right - left + 1);
+            info.max += tag.addition;
+            info.min += tag.addition;
+            return *this;
+        }
+
+        int left{-1};
+        int right{-1};
+        Info info;
+    };
+
+  public:
+    explicit Segment_tree(int l, int r)
+        : node_(4 * (r - l + 1) + 1), lazy_tags_(4 * (r - l + 1) + 1)
+    {
+        build_tree(l, r, 1);
+    }
+
+    void apply(int l, int r, Lazy_tag const &tag)
+    {
+        apply_impl(l, r, 1, tag);
+    }
+
+    Node query(int l, int r)
+    {
+        return query_impl(l, r, 1);
+    }
+
+  private:
+    // Sets up segments that nodes manage.
+    void build_tree(int l, int r, int u)
+    {
+        node_[u].left = l;
+        node_[u].right = r;
+
+        if (l != r) {
+            auto const m = (l + r) / 2;
+            build_tree(l, m, u * 2);
+            build_tree(m + 1, r, (u * 2) + 1);
+        }
+    }
+
+    void do_lazy_propagation(std::size_t u)
+    {
+        if (is_leaf(u)) {
+            return;
+        }
+
+        lazy_tags_[u * 2] += lazy_tags_[u];
+        lazy_tags_[u * 2 + 1] += lazy_tags_[u];
+        node_[u * 2] += lazy_tags_[u];
+        node_[u * 2 + 1] += lazy_tags_[u];
+        lazy_tags_[u] = {};
+    }
+
+    void apply_impl(int l, int r, std::size_t u, Lazy_tag const &tag)
+    {
+        if (l <= node_[u].left && node_[u].right <= r) {
+            node_[u] += tag;
+            lazy_tags_[u] += tag;
+            return;
+        }
+
+        do_lazy_propagation(u);
+        if (node_[u * 2].right >= l) {
+            apply_impl(l, r, u * 2, tag);
+        }
+        if (node_[u * 2 + 1].left <= r) {
+            apply_impl(l, r, u * 2 + 1, tag);
+        }
+        node_[u].info = {};
+        node_[u] += node_[u * 2];
+        node_[u] += node_[u * 2 + 1];
+    }
+
+    // We assume that [l, r] contains [_nodes[u].left_end, _nodes[u].right_end].
+    Node query_impl(int l, int r, std::size_t u)
+    {
+        // If [l, r] nests node u, the segment node doesn't have to be divided
+        // anymore. So we direct return the info of this node.
+        if (l <= node_[u].left && node_[u].right <= r) {
+            return node_[u];
+        }
+
+        do_lazy_propagation(u);
+
+        Node res;
+        if (node_[u * 2].right >= l) {
+            res += query_impl(l, r, u * 2);
+        }
+        if (node_[u * 2 + 1].left <= r) {
+            res += query_impl(l, r, u * 2 + 1);
+        }
+        return res;
+    }
+
+    [[nodiscard]] auto is_leaf(std::size_t u) const -> bool
+    {
+        return node_[u].left == node_[u].right;
+    }
+
+    std::vector<Node> node_;
+    std::vector<Lazy_tag> lazy_tags_;
+};
+// NOLINTEND(readability-math-missing-parentheses)
+
+} // namespace shelpam
+void solve_case()
+{
+    using namespace ::shelpam;
+    int n, m;
+    std::cin >> n >> m;
+    std::vector<int> a(n);
+    std::cin >> a;
+
+    Segment_tree st(0, n - 1);
+    for (int i{}; i != n; ++i) {
+        st.apply(i, i, {.addition{a[i]}});
+    }
+
+    for (int i{}; i != m; ++i) {
+        int t, x, y;
+        std::cin >> t >> x >> y;
+        --x, --y;
+        if (t == 1) {
+            int k;
+            std::cin >> k;
+            st.apply(x, y, {.addition = k});
+        }
+        else {
+            std::cout << st.query(x, y).info.sum << '\n';
+        }
+    }
+}

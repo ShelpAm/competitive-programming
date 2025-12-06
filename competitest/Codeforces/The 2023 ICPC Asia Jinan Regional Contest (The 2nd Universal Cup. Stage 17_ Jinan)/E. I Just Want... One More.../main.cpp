@@ -1,9 +1,13 @@
 #pragma once
 
+#ifndef __cpp_concepts
+#error This lib requires at least cpp20 to work.
+#endif
+
 // Problem: E. I Just Want... One More...
 // Contest: The 2023 ICPC Asia Jinan Regional Contest (The 2nd Universal Cup.
 // Stage 17: Jinan) Judge: Codeforces URL:
-// https://codeforces.com/gym/104901/problem/E Start: Mon 21 Jul 2025 01:59:25
+// https://codeforces.com/gym/104901/problem/E Start: Tue 14 Oct 2025 03:20:34
 // PM CST Author: ShelpAm
 
 // #include <bits/stdc++.h>
@@ -110,11 +114,12 @@ constexpr auto sum_of(std::ranges::range auto const &coll) noexcept
         coll.begin(), coll.end(),
         typename std::remove_cvref_t<decltype(coll)>::value_type{});
 }
-constexpr auto pow(auto base, auto exp, std::uint_least64_t p)
+template <typename T> constexpr T pow(T base, auto exp, std::integral auto p)
 {
     static_assert(sizeof(base) > sizeof(int), "Use of `int`s is bug-prone.");
     if (exp < 0) {
-        throw std::invalid_argument{"Exponent should be non-negative"};
+        base = pow(base, p - 2, p);
+        exp = -exp;
     }
     decltype(base) res{1};
     while (exp != 0) {
@@ -134,7 +139,7 @@ std::int_least64_t binary_search(std::invocable<std::int_least64_t> auto check,
         throw std::invalid_argument{"check isn't true on 'ok'."};
     }
     while (std::abs(ok - ng) > 1) {
-        auto const x{(ok + ng) / 2};
+        auto const x = (ok + ng) / 2;
         (check(x) ? ok : ng) = x;
     }
     return ok;
@@ -157,8 +162,8 @@ constexpr int msb(std::unsigned_integral auto i)
 //         std::chrono::steady_clock::now().time_since_epoch().count());
 //     return rng();
 // }
-void solve_case();
 } // namespace
+void solve_case();
 int main()
 {
     std::ios::sync_with_stdio(false);
@@ -166,7 +171,7 @@ int main()
     constexpr auto my_precision{10};
     std::cout << std::fixed << std::setprecision(my_precision);
     int t{1};
-    // std::cin >> t;
+    std::cin >> t;
     for (int i{}; i != t; ++i) {
 #ifndef ONLINE_JUDGE
         std::cerr << "Test case " << i << '\n';
@@ -175,105 +180,167 @@ int main()
     }
     return 0;
 }
-struct BipartiteGraph {
-    int n1, n2;                      // number of vertices in X and Y, resp.
-    std::vector<std::vector<int>> g; // edges from X to Y
-    std::vector<int> ma, mb; // matches from X to Y and from Y to X, resp.
-    std::vector<int> dist;   // distance from unsaturated vertices in X.
-
-    BipartiteGraph(int n1, int n2)
-        : n1(n1), n2(n2), g(n1), ma(n1, -1), mb(n2, -1)
-    {
-    }
-
-    // Add an edge from u in X to v in Y.
-    void add_edge(int u, int v)
-    {
-        g[u].emplace_back(v);
-    }
-
-    // Build the level graph.
-    bool bfs()
-    {
-        dist.assign(n1, -1);
-        std::queue<int> q;
-        for (int u = 0; u < n1; ++u) {
-            if (ma[u] == -1) {
-                dist[u] = 0;
-                q.emplace(u);
-            }
-        }
-        // Build the level graph for all reachable vertices.
-        bool succ = false;
-        while (!q.empty()) {
-            int u = q.front();
-            q.pop();
-            for (int v : g[u]) {
-                if (mb[v] == -1) {
-                    succ = true;
-                }
-                else if (dist[mb[v]] == -1) {
-                    dist[mb[v]] = dist[u] + 1;
-                    q.emplace(mb[v]);
-                }
-            }
-        }
-        return succ;
-    }
-
-    // Find an augmenting path starting at u.
-    bool dfs(int u)
-    {
-        for (int v : g[u]) {
-            if (mb[v] == -1 || (dist[mb[v]] == dist[u] + 1 && dfs(mb[v]))) {
-                ma[u] = v;
-                mb[v] = u;
-                return true;
-            }
-        }
-        dist[u] = -1; // Mark this point as inreachable after one visit.
-        return false;
-    }
-
-    // Hopcroft-Karp maximum matching algorithm.
-    std::vector<std::pair<int, int>> hopcroft_karp_maximum_matching()
-    {
-        // Build the level graph and then find a blocking flow.
-        while (bfs()) {
-            for (int u = 0; u < n1; ++u) {
-                if (ma[u] == -1) {
-                    dfs(u);
-                }
-            }
-        }
-        // Collect the matched pairs.
-        std::vector<std::pair<int, int>> matches;
-        matches.reserve(n1);
-        for (int u = 0; u < n1; ++u) {
-            if (ma[u] != -1) {
-                matches.emplace_back(u, ma[u]);
-            }
-        }
-        return matches;
-    }
-};
-namespace {
 using i64 = std::int_least64_t;
 using i128 = __int128_t;
 using u64 = std::uint_least64_t;
 using u128 = __uint128_t;
+using namespace std;
+using ll = i64;
+#define int ll
+struct MaxFlow {
+    struct Edge {
+        int v;    // 目标顶点
+        int cap;  // 容量
+        int flow; // 当前流量 ----> 可以知道每条边流经的流量
+        int rev;  // 反向边在邻接表中的索引
+    };
+
+    int n;                      // 顶点总数
+    int S, T;                   // 源点和汇点
+    int maxflow;                // 最大流结果
+    vector<vector<Edge>> graph; // 图的邻接表
+    vector<int> dep;            // 深度数组（BFS分层）
+    vector<int> cur;            // 当前弧优化数组
+
+    // 构造函数：初始化最大流算法
+    MaxFlow(int num_nodes, int source, int sink)
+        : n(num_nodes), S(source), T(sink), maxflow(0)
+    {
+        graph.resize(n + 1);
+        dep.resize(n + 1);
+        cur.resize(n + 1);
+    }
+
+    void addedge(int u, int v, ll w)
+    {
+        // 添加正向边：u->v，容量w
+        graph[u].push_back({v, w, 0, (int)graph[v].size()});
+        // 添加反向边：v->u，容量0
+        graph[v].push_back({u, 0, 0, (int)graph[u].size() - 1});
+    }
+
+    bool bfs()
+    {
+        queue<int> q;
+        fill(dep.begin(), dep.end(), 0);
+
+        dep[S] = 1;
+        q.push(S);
+        while (!q.empty()) {
+            int u = q.front();
+            q.pop();
+            for (auto e : graph[u]) {
+                int v = e.v;
+                // 未访问过且有余量
+                if (!dep[v] && e.cap > e.flow) {
+                    dep[v] = dep[u] + 1;
+                    q.push(v);
+                }
+            }
+        }
+        return dep[T]; // 返回汇点是否可达
+    }
+
+    int dfs(int u, int flow)
+    {
+        if (u == T || flow == 0)
+            return flow;
+
+        int ret = 0;
+        for (int &i = cur[u]; i < graph[u].size(); i++) {
+            Edge &e = graph[u][i];
+            int v = e.v;
+            // 按层次图移动且有余量
+            if (dep[v] == dep[u] + 1 && e.cap > e.flow) {
+                int d = dfs(v, min(flow - ret, e.cap - e.flow));
+                if (d > 0) {
+                    ret += d;
+                    e.flow += d; // 更新正向边流量
+                    // 更新反向边流量
+                    graph[v][e.rev].flow -= d;
+                    if (ret == flow)
+                        break;
+                }
+            }
+        }
+        return ret;
+    }
+
+    void dinic()
+    {
+        maxflow = 0;
+        while (bfs()) {
+            fill(cur.begin(), cur.end(), 0); // 重置当前弧
+            maxflow += dfs(S, inf<i64>);
+        }
+    }
+};
 void solve_case()
 {
     using namespace ::shelpam;
     int n, m;
     std::cin >> n >> m;
-    BipartiteGraph g(n, n);
+    MaxFlow mf(2 * n + 2, 0, 2 * n + 1);
     for (int i{}; i != m; ++i) {
         int u, v;
         std::cin >> u >> v;
-        g.add_edge(u - 1, v - 1);
+        mf.addedge(u, n + v, 1);
+    }
+    for (int i{}; i != n; ++i) {
+        mf.addedge(0, i + 1, 1);
+        mf.addedge(n + i + 1, 2 * n + 1, 1);
     }
 
-    auto res = g.hopcroft_karp_maximum_matching();
+    mf.dinic();
+
+    auto bfs = [&](int s) {
+        std::queue<int> q;
+        q.push(s);
+        std::vector<int> vis(2 * n + 2);
+        while (!q.empty()) {
+            auto u = q.front();
+            q.pop();
+
+            if (vis[u]) {
+                continue;
+            }
+            vis[u] = 1;
+
+            for (auto e : mf.graph[u]) {
+                if (e.cap - e.flow != 0) {
+                    q.push(e.v);
+                }
+            }
+        }
+        return vis;
+    };
+    auto bfs1 = [&](int s) {
+        std::queue<int> q;
+        q.push(s);
+        std::vector<int> vis(2 * n + 2);
+        while (!q.empty()) {
+            auto u = q.front();
+            q.pop();
+
+            if (vis[u]) {
+                continue;
+            }
+            vis[u] = 1;
+
+            for (auto e : mf.graph[u]) {
+                if (e.cap - e.flow == 0) {
+                    q.push(e.v);
+                }
+            }
+        }
+        return vis;
+    };
+
+    auto v1 = bfs(0);
+    debug("v1", v1);
+    auto l = std::accumulate(v1.begin() + 1, v1.begin() + 1 + n, 0LL);
+    auto v2 = bfs1(2 * n + 1);
+    debug("v2", v2);
+    auto r = std::accumulate(v2.begin() + 1 + n, v2.begin() + 1 + 2 * n, 0LL);
+    std::cout << l * r << '\n';
 }
-} // namespace

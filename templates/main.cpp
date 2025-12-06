@@ -1,5 +1,9 @@
 #pragma once
 
+#ifndef __cpp_concepts
+#error This lib requires at least cpp20 to work.
+#endif
+
 // Problem: $(PROBLEM)
 // Contest: $(CONTEST)
 // Judge: $(JUDGE)
@@ -38,8 +42,8 @@
 #include <vector>
 
 namespace {
-[[maybe_unused]] constexpr std::uint_least64_t mod998244353{998'244'353ULL};
-[[maybe_unused]] constexpr std::uint_least64_t mod1e9p7{1'000'000'007ULL};
+[[maybe_unused]] constexpr std::int_least64_t mod998244353{998'244'353LL};
+[[maybe_unused]] constexpr std::int_least64_t mod1e9p7{1'000'000'007LL};
 [[maybe_unused]] constexpr double eps{1e-10};
 template <typename T> constexpr T inf{std::numeric_limits<T>::max() / 4};
 template <typename T> constexpr T max{std::numeric_limits<T>::max()};
@@ -67,17 +71,13 @@ std::istream &operator>>(std::istream &istream,
     using T = std::remove_cvref_t<decltype(t)>;
     static_assert(!shelpam::concepts::tuple<T>,
                   "tuple: not implemented yet.\n");
-    if constexpr (std::ranges::range<T>) {
-        for (auto &ele : t) {
+    if constexpr (std::ranges::range<T>)
+        for (auto &ele : t)
             istream >> ele;
-        }
-    }
-    else if constexpr (shelpam::concepts::pair<T>) {
+    else if constexpr (shelpam::concepts::pair<T>)
         istream >> t.first >> t.second;
-    }
-    else {
+    else
         istream >> t;
-    }
     return istream;
 }
 #ifndef ONLINE_JUDGE
@@ -105,12 +105,6 @@ bool chmin(auto &value, auto const &other) noexcept
     }
     return false;
 }
-constexpr auto sum_of(std::ranges::range auto const &coll) noexcept
-{
-    return std::accumulate(
-        coll.begin(), coll.end(),
-        typename std::remove_cvref_t<decltype(coll)>::value_type{});
-}
 template <typename T> constexpr T pow(T base, auto exp, std::integral auto p)
 {
     static_assert(sizeof(base) > sizeof(int), "Use of `int`s is bug-prone.");
@@ -120,9 +114,8 @@ template <typename T> constexpr T pow(T base, auto exp, std::integral auto p)
     }
     decltype(base) res{1};
     while (exp != 0) {
-        if ((exp & 1) == 1) {
+        if ((exp & 1) == 1)
             res = res * base % p;
-        }
         base = base * base % p;
         exp >>= 1;
     }
@@ -132,9 +125,8 @@ std::int_least64_t binary_search(std::invocable<std::int_least64_t> auto check,
                                  std::int_least64_t ok, std::int_least64_t ng,
                                  bool check_ok = true)
 {
-    if (check_ok && !check(ok)) {
+    if (check_ok && !check(ok))
         throw std::invalid_argument{"check isn't true on 'ok'."};
-    }
     while (std::abs(ok - ng) > 1) {
         auto const x = (ok + ng) / 2;
         (check(x) ? ok : ng) = x;
@@ -148,9 +140,8 @@ template <std::unsigned_integral T> constexpr T lsb(T i) noexcept
 // i mustn't be 0
 constexpr int msb(std::unsigned_integral auto i)
 {
-    if (i == 0) {
+    if (i == 0)
         throw std::invalid_argument{"i must be positive."};
-    }
     return (sizeof(i) * CHAR_BIT) - 1 - std::countl_zero(i);
 }
 // [[maybe_unused]] auto gen_rand() noexcept
@@ -159,13 +150,13 @@ constexpr int msb(std::unsigned_integral auto i)
 //         std::chrono::steady_clock::now().time_since_epoch().count());
 //     return rng();
 // }
-void solve_case();
 } // namespace
+void solve_case();
 int main()
 {
     std::ios::sync_with_stdio(false);
     std::cin.tie(nullptr);
-    constexpr auto my_precision{10};
+    constexpr auto my_precision = 10;
     std::cout << std::fixed << std::setprecision(my_precision);
     int t{1};
     // std::cin >> t;
@@ -177,7 +168,6 @@ int main()
     }
     return 0;
 }
-namespace {
 using i64 = std::int_least64_t;
 using i128 = __int128_t;
 using u64 = std::uint_least64_t;
@@ -187,4 +177,3 @@ void solve_case()
     using namespace ::shelpam;
     // return;
 }
-} // namespace

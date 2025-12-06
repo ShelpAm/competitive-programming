@@ -22,10 +22,10 @@ src="${problem}/main.cpp"
 if [[ -e ${src} ]]; then
   cp ${src} ${src}.bak
   if [[ ${2-""} == "--force" ]]; then
-    cp "${template_dir}/main.cpp" ${src}
+    cp "${template_dir}/empty.cpp" ${src}
   fi
 else
-  cp "${template_dir}/main.cpp" ${src}
+  cp "${template_dir}/empty.cpp" ${src}
 fi
 nvim ${src} +${cpp_start_point}
 env_set problem ${problem}
