@@ -3,13 +3,11 @@
 #include "../templates/main.cpp"
 #include "graph.h"
 
-namespace shelpam {
-
-using graph::Node_type;
+namespace shelpam::graph {
 
 class Least_common_ancestor {
   public:
-    Least_common_ancestor(graph::Graph const &g, int root)
+    Least_common_ancestor(Graph const &g, int root)
         : dfn_(g.size()),
           depth_(g.size(),
                  -1) // -1 to make `depth[parent-of-root] + 1` equal to 0.
@@ -75,4 +73,54 @@ class Least_common_ancestor {
 
 using LCA = Least_common_ancestor;
 
-} // namespace shelpam
+/// @brief LogN version of LCA algorithm.
+class LeastCommonAncestor {
+  public:
+    LeastCommonAncestor(Graph const &tree, Node_type root)
+        : k_{std::__lg(tree.size())}, d_(tree.size()),
+          f_(k_ + 1, std::vector<Node_type>(tree.size()))
+    {
+        assert(tree.size() != 0);
+        auto init = [&](auto self, Node_type u, Node_type p) -> void {
+            d_[u] = d_[p] + 1;
+            f_[0][u] = p;
+            for (auto i = 1; i != f_.size(); ++i) {
+                f_[i][u] = f_[i - 1][f_[i - 1][u]];
+            }
+            for (auto [_, v] : tree.edges_of(u))
+                if (v != p)
+                    self(self, v, u);
+        };
+        init(init, root, root);
+    }
+
+    Node_type lca(Node_type u, Node_type v)
+    {
+        if (d_[u] < d_[v]) // Ensures d[u] >= d[v]
+            std::swap(u, v);
+
+        for (auto i = k_; i != -1; --i) // u goes up until d[u] == d[v].
+            if (d_[f_[i][u]] >= d_[v])
+                u = f_[i][u];
+
+        if (u == v) // u is son of v, lca == u && lca == v
+            return u;
+
+        for (auto i = k_; i != -1; --i) {
+            if (f_[i][u] != f_[i][v]) {
+                u = f_[i][u];
+                v = f_[i][v];
+            }
+        }
+
+        return f_[0][v];
+    }
+
+  private:
+    unsigned long k_;
+    std::vector<int> d_; // d[i]: depth of node i. (root's depth starts from 1)
+    // f[i][j] stands for the node which j go up for 2^i
+    std::vector<std::vector<Node_type>> f_;
+};
+
+} // namespace shelpam::graph
